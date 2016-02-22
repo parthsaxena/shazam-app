@@ -19,86 +19,37 @@ public class Main {
 		final AudioFormat format = getFormat();                                                                                                                                                                                                                                                                                                              
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
 		final TargetDataLine line;
-		try {
-			line = (TargetDataLine) AudioSystem.getLine(info);
-			line.open(format);
-			line.start();
-			
-			Thread listeningThread = new Thread(new Runnable() {
-				public void run() {
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					running = true;
-					int n = 0;
-					byte[] buffer = new byte[(int) 1024];
-
-					try {
-						while (running) {
-							n++;
-							int count = 0;
-							if (n > 1000)
-								break;
-							if (count > 0) {
-								out.write(buffer, 0, count);
-							}
-						}
-
-						byte b[] = out.toByteArray();
-						for (int i = 0; i < b.length; i++) {
-							System.out.println(b[i]);
-						}
-
+			try {
+				line = (TargetDataLine) AudioSystem.getLine(info);
+				line.open(format);
+				line.start();
+				
+				Thread listeningThread = new Thread(new Runnable() {
+					public void run() {
+						OutputStream out = new ByteArrayOutputStream();
+						running = true;
+						byte[] buffer = new byte[(int) 1024];
+						
 						try {
-
-							FileWriter fstream = new FileWriter("out.txt");
-							BufferedWriter outFile = new BufferedWriter(fstream);
-
-							byte bytes[] = out.toByteArray();
-							for (int i = 0; i < b.length; i++) {
-								outFile.write("" + b[i] + ";");
-							}
-							outFile.close();
-
-						} catch (Exception e) {
-							System.err.println("Error: " + e.getMessage());
+						    while (running) {
+						        int count = line.read(buffer, 0, buffer.length);
+						        if (count > 0) {
+						            out.write(buffer, 0, count);
+						        }
+						    }
+						    out.close();
+						} catch (IOException e) {
+						    System.err.println("I/O problems: " + e);
+						    System.exit(-1);
 						}
-
-						out.close();
-						line.close();
-					} catch (IOException e) {
-						System.err.println("I/O problems: " + e);
-						System.exit(-1);
 					}
-
-				}
-
-			});
-
-			listeningThread.start();
-			
-		} catch (LineUnavailableException e) {
-			e.printStackTrace();
-		}
-		
-		/*OutputStream out = new ByteArrayOutputStream();
-		running = true;
-		
-		try {
-			while (running) {
-				int count  = line.read(buffer,  0,  buffer.length);
-				if (count > 0) {
-					out.write(buffer,  0, count);
-				}
+				});	
+			} catch (LineUnavailableException e1) {
+				// TODO Auto-generated catch block
+				System.out.println("Error Attaching Line...");
 			}
-			out.close();
-		} catch (IOException e) {
-			System.err.println("I/O problems: " + e);
-			System.exit(-1); 
-		}*/
-		
-		
-		
 	}
-
+		
 	private static AudioFormat getFormat() {
 		float sampleRate = 44100;
 		int sampleSizeInBits = 8;
